@@ -11,21 +11,4 @@ Circuito Kelvin → ESP32 → Hotspot celular → Internet → test.mosquitto.or
 
 ---
 
-## 📁 Estructura del repositorio
-ohmetro-kelvin-esp32/
-├── firmware/
-│ └── kelvin_esp32/
-│ └── DisenoTF.ino # Firmware ESP32 (Arduino IDE)
-├── android/
-│ └── KelvinOhmeter/ # Proyecto Android completo
-│ ├── app/src/main/java/com/uis/kelvinohmmeter/
-│ │ ├── MqttManager.kt
-│ │ ├── MainActivity.kt
-│ │ ├── ConnectionActivity.kt
-│ │ ├── SettingsActivity.kt
-│ │ └── EdgeToEdgeUtils.kt
-│ └── app/src/main/AndroidManifest.xml
-├── .gitignore
-├── LICENSE
-└── README.md
 
