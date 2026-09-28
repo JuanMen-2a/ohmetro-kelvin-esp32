@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">KelvinOhmmeter</string>
+    <string name="valor_medicion">200</string>
+    <string name="unidad_mohm">mOhm</string>
+    <string name="porcentaje_bateria">%Bateria</string>
+    <string name="estado_bateria">Estado de la bateria</string>
+    <string name="tiempo_carga">Tiempo de carga</string>
+    <string name="desc_logo">Logo UIS</string>
+    <string name="desc_ajustes">Ajustes</string>
+    <string name="ajustes_titulo">Ajustes</string>
+    <string name="volver">Volver</string>
+    <string name="conectando">Conectando…</string>
+    <string name="conectando_subtitulo">Buscando el dispositivo Kelvin</string>
+    <string name="reintentar">Reintentar</string>
+    <string name="error_conexion">No se pudo conectar</string>
+    <string name="error_conexion_subtitulo">No se pudo conectar al broker MQTT</string>
+    <string name="conectado">¡Conectado!</string>
+    <string name="iniciar_medicion">Iniciar medición</string>
+    <string name="detener_medicion">Detener medición</string>
+    <string name="desc_bateria">Icono de batería</string>
+    <string name="bateria_formato">%d%%</string>
+    <string name="cargando">Cargando</string>
+    <!-- Ajustes -->
+    <string name="seccion_wifi">Conexión WiFi</string>
+    <string name="hint_ssid">Nombre de la red (SSID)</string>
+    <string name="hint_password">Contraseña</string>
+    <string name="guardar_wifi">Guardar WiFi</string>
+    <string name="seccion_calibracion">Calibración</string>
+    <string name="hint_offset">Offset (mOhm)</string>
+    <string name="calibrar_cero">Calibrar en cero</string>
+    <string name="seccion_unidades">Unidad de medida</string>
+    <string name="unidad_mohm_opcion">mOhm</string>
+    <string name="unidad_ohm_opcion">Ohm</string>
+    <string name="guardar_ajustes">Guardar ajustes</string>
+</resources>

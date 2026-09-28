@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/fondo_crema"
+        android:fillViewport="true">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+        <TextView
+                android:id="@+id/settingsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ajustes_titulo"
+                android:textSize="28sp"
+                android:textColor="@color/verde_kelvin"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="24dp" />
+
+        <!-- Sección WiFi -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_border"
+                android:padding="16dp"
+                android:layout_marginBottom="20dp">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/seccion_wifi"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/verde_kelvin"
+                    android:layout_marginBottom="12dp" />
+
+            <EditText
+                    android:id="@+id/ssidInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_ssid"
+                    android:inputType="text"
+                    android:textColor="@color/verde_kelvin"
+                    android:textColorHint="@color/verde_kelvin" />
+
+            <EditText
+                    android:id="@+id/passwordInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_password"
+                    android:inputType="textPassword"
+                    android:textColor="@color/verde_kelvin"
+                    android:textColorHint="@color/verde_kelvin"
+                    android:layout_marginTop="8dp" />
+
+            <Button
+                    android:id="@+id/saveWifiButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/guardar_wifi"
+                    android:backgroundTint="@color/verde_kelvin"
+                    android:textColor="@color/blanco"
+                    android:layout_marginTop="12dp" />
+
+        </LinearLayout>
+
+        <!-- Sección Calibración -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_border"
+                android:padding="16dp"
+                android:layout_marginBottom="20dp">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/seccion_calibracion"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/verde_kelvin"
+                    android:layout_marginBottom="12dp" />
+
+            <EditText
+                    android:id="@+id/offsetInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_offset"
+                    android:inputType="numberDecimal|numberSigned"
+                    android:textColor="@color/verde_kelvin"
+                    android:textColorHint="@color/verde_kelvin" />
+
+            <Button
+                    android:id="@+id/calibrateZeroButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/calibrar_cero"
+                    android:backgroundTint="@color/verde_kelvin"
+                    android:textColor="@color/blanco"
+                    android:layout_marginTop="12dp" />
+
+        </LinearLayout>
+
+        <!-- Sección Unidades -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_border"
+                android:padding="16dp"
+                android:layout_marginBottom="24dp">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/seccion_unidades"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/verde_kelvin"
+                    android:layout_marginBottom="8dp" />
+
+            <RadioGroup
+                    android:id="@+id/unitsRadioGroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <RadioButton
+                        android:id="@+id/radioMohm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/unidad_mohm_opcion"
+                        android:textColor="@color/verde_kelvin"
+                        android:checked="true"
+                        android:layout_marginEnd="24dp" />
+
+                <RadioButton
+                        android:id="@+id/radioOhm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/unidad_ohm_opcion"
+                        android:textColor="@color/verde_kelvin" />
+
+            </RadioGroup>
+
+        </LinearLayout>
+
+        <Button
+                android:id="@+id/saveSettingsButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/guardar_ajustes"
+                android:backgroundTint="@color/verde_kelvin"
+                android:textColor="@color/blanco"
+                android:layout_marginBottom="12dp" />
+
+        <Button
+                android:id="@+id/backButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/volver" />
+
+    </LinearLayout>
+
+</ScrollView>
