@@ -3,8 +3,8 @@
 #include <ArduinoJson.h>
 
 // ---------- CONFIG WiFi ----------
-const char* WIFI_SSID     = "Juan's A16";
-const char* WIFI_PASSWORD = "mendozas24";
+const char* WIFI_SSID     = "WIFI_SSID";
+const char* WIFI_PASSWORD = "WIFI_PASSWORD";
 
 // ---------- CONFIG MQTT ----------
 const char* MQTT_BROKER   = "test.mosquitto.org";
