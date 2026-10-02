@@ -1,0 +1,270 @@
+* =====================================================================
+* modelos_miliohmimetro.lib
+* Modelos para las simulaciones LTspice del miliohmimetro IoT
+* (Diseno de Sistemas Electronicos 2026-II - UIS)
+* Todos son modelos de COMPORTAMIENTO (no los modelos oficiales del
+* fabricante) basados en los datos de las hojas de datos de la carpeta
+* del proyecto.
+* =====================================================================
+
+* ---------------------------------------------------------------------
+* TL431 - referencia shunt ajustable (Vref = 2.495 V)
+* Pines: K A REF
+* ---------------------------------------------------------------------
+.subckt TL431 K A REF
+Rin REF A 100Meg
+B1 K A I=10*uramp(V(REF,A)-2.495)
+D1 A K DTL
+Cq K A 1n
+.model DTL D(Is=1e-14)
+.ends TL431
+
+* ---------------------------------------------------------------------
+* LM358 - op-amp de alimentacion simple (macromodelo)
+* GBW ~1 MHz, Av ~100 dB, entrada incluye GND, salida 0 ... V+ - 1.5 V
+* Pines: IN+ IN- V+ V- OUT   (orden del simbolo OpAmps\opamp2)
+* ---------------------------------------------------------------------
+.subckt LM358 INP INN VCC VEE OUT
+Rin INP INN 10Meg
+G1 VEE N1 INP INN 1m
+R1 N1 VEE 100Meg
+C1 N1 VEE 159p
+D3 N1 VCC DCL
+D4 VEE N1 DCL
+Bo O1 VEE V=limit(V(N1,VEE), 0.01, V(VCC,VEE)-1.5)
+Ro O1 OUT 30
+Iq VCC VEE 0.35m
+.model DCL D(Is=1e-14)
+.ends LM358
+
+* ---------------------------------------------------------------------
+* 2N2222A (MMBT2222A en la PCB)
+* ---------------------------------------------------------------------
+.model 2N2222A NPN(IS=1E-14 VAF=100 BF=200 IKF=0.3 XTB=1.5 BR=3 CJC=8E-12 CJE=25E-12 TR=100E-9 TF=400E-12 ITF=1 VTF=2 XTF=3 RB=10 RC=.3 RE=.2 Vceo=40 Icrating=800m mfg=generico)
+
+* ---------------------------------------------------------------------
+* LED E6C1206YG (amarillo-verde, Vf ~2.0 V @ 5 mA)
+* ---------------------------------------------------------------------
+.model LED_YG D(Is=1e-20 N=1.75 Rs=8 Cjo=20p Iave=25m Vpk=5 type=LED)
+
+* ---------------------------------------------------------------------
+* INA333 - amplificador de instrumentacion (topologia de 3 op-amps)
+* G = 1 + 100k/RG.  Resistencias internas de 50k (hoja de datos SBOS445)
+* Cada op-amp interno: GBW ~350 kHz, Av 120 dB, salida a 20 mV de los
+* rieles (rail-to-rail). Asi el modelo reproduce la SATURACION INTERNA
+* de la primera etapa cuando VIN- - Vd*(G-1)/2 < V- (alimentacion simple).
+* Pines (numeracion del encapsulado):
+*   1 RG  2 VIN-  3 VIN+  4 V-  5 REF  6 VOUT  7 V+  8 RG
+* ---------------------------------------------------------------------
+.subckt INA333 RG1 VINN VINP VNEG REF VOUT VPOS RG8
+* A1 (entrada VIN-)  -> nodo O1, realimentacion 50k a RG (pin 1)
+G1 VNEG N1 VINN RG1 1m
+R1 N1 VNEG 1G
+C1 N1 VNEG 455p
+DA1 N1 VPOS DCL
+DB1 VNEG N1 DCL
+B1 O1 VNEG V=limit(V(N1,VNEG), 0.02, V(VPOS,VNEG)-0.02)
+RF1 O1 RG1 50k
+* A2 (entrada VIN+)  -> nodo O2, realimentacion 50k a RG (pin 8)
+G2 VNEG N2 VINP RG8 1m
+R2 N2 VNEG 1G
+C2 N2 VNEG 455p
+DA2 N2 VPOS DCL
+DB2 VNEG N2 DCL
+B2 O2 VNEG V=limit(V(N2,VNEG), 0.02, V(VPOS,VNEG)-0.02)
+RF2 O2 RG8 50k
+* A3 amplificador diferencial (ganancia 1, resistencias 50k)
+R3 O1 N3M 50k
+R4 N3M VOUT 50k
+R5 O2 N3P 50k
+R6 N3P REF 50k
+G3 VNEG N3 N3P N3M 1m
+R7 N3 VNEG 1G
+C3 N3 VNEG 455p
+DA3 N3 VPOS DCL
+DB3 VNEG N3 DCL
+B3 O3 VNEG V=limit(V(N3,VNEG), 0.02, V(VPOS,VNEG)-0.02)
+RO O3 VOUT 10
+* entradas y consumo
+CI1 VINP VNEG 3p
+CI2 VINN VNEG 3p
+Iq VPOS VNEG 50u
+.model DCL D(Is=1e-14)
+.ends INA333
+
+* ---------------------------------------------------------------------
+* ADS1252 - ADC delta-sigma de 24 bits (modelo de comportamiento)
+* Pines: 1 +VIN  2 -VIN  3 +VDD  4 CLK  5 DOUT/DRDY  6 SCLK  7 GND  8 VREF
+* - Ciclo de conversion = 384 periodos de CLK (contador digital de 9 bits
+*   que cuenta los flancos REALES del pin CLK).  Data rate = fCLK/384.
+* - Temporizacion de DOUT/DRDY (hoja de datos, Fig. 11 y 12):
+*     n = 0..5    : DOUT/DRDY en BAJO  (t2, pulso DRDY)
+*     n = 6..11   : ALTO               (t3)
+*     n = 12..359 : modo DOUT, 24 bits MSB primero; el bit siguiente se
+*                   pone en cada flanco de BAJADA de SCLK (despues de 24
+*                   flancos se mantiene el LSB)
+*     n = 360..383: ALTO               (t4)
+* - Codigo = (V(+VIN)-V(-VIN))/VREF * 2^23 (offset binary two's complement)
+* - Impedancia de entrada diferencial = 1/(fCLK*2.08p) (480k @ 1 MHz)
+* - El ADS1252 REAL esta especificado para VDD = 4.75...5.25 V y VIH >= 4 V;
+*   este modelo funciona con cualquier VDD (no detecta esa violacion).
+* Parametro: FCLK = frecuencia de CLK usada (solo para la impedancia)
+* ---------------------------------------------------------------------
+.subckt ADS1252 VINP VINN VDD CLK DOUT SCLK GND VREF params: FCLK=1Meg
+RIN VINP VINN {1/(FCLK*2.08p)}
+CIP VINP GND 20p
+CIN VINN GND 20p
+RREF VREF GND 16.6k
+IDD VDD GND 8m
+* --- niveles logicos internos (0/1 V)
+BCK CKD GND V=if(V(CLK,GND) > 0.5*V(VDD,GND), 1, 0)
+BSN SCN GND V=if(V(SCLK,GND) < 0.5*V(VDD,GND), 1, 0)
+* --- contador de CLK modulo 384: muestreo y retencion que suma 1 en cada
+*     flanco de subida de CLK (RC de 2 ns rompe el lazo algebraico;
+*     se guarda el valor/1000 porque el S/H de LTspice limita a ~10 V)
+BNX NNX GND V=if(V(TNOW) < 1n, 0, if(V(NCD) > 0.3825, 0, round(1000*V(NCD))+1)/1000)
+ANC NNX GND CKD 0 0 0 NCS GND SAMPLEHOLD
+RNC NCS NCD 1k
+CNC NCD GND 2p
+BNC NCNT GND V=1000*V(NCS)
+VTM TNOW GND PWL(0 0 100 100)
+* --- muestreo de la entrada al inicio de cada ciclo (n = 0)
+BSM SMP GND V=if(V(NCNT) < 0.5, 1, 0)
+BVD VDIF GND V=V(VINP,VINN)/max(V(VREF,GND),0.1)
+ASH VDIF GND SMP 0 0 0 VHOLD GND SAMPLEHOLD
+BCD CODE GND V=limit(floor(V(VHOLD)*8388608+0.5), -8388608, 8388607)
+BUC UCODE GND V=if(V(CODE) < 0, V(CODE)+16777216, V(CODE))
+* --- indice de bit: flancos de bajada de SCLK contados desde el inicio
+*     del modo DOUT (contador libre IXC menos su valor al iniciar DOUT)
+BIN INX GND V=if(V(TNOW) < 1n, 0, (round(1000*V(IXD))+1)/1000)
+AIC INX GND SCN 0 0 0 IXC GND SAMPLEHOLD
+RIC IXC IXD 1k
+CIC IXD GND 2p
+BDM DMODE GND V=if(V(NCNT) > 11.5, 1, 0)
+AIB IXC GND DMODE 0 0 0 IXB GND SAMPLEHOLD
+BIX IDX GND V=max(round(1000*(V(IXC)-V(IXB))), 0)
+* --- salida DOUT/DRDY
+BIX2 IDXL GND V=min(round(V(IDX)), 23)
+BBT BIT GND V=floor(V(UCODE)/pow(2,23-V(IDXL))) - 2*floor(V(UCODE)/pow(2,24-V(IDXL)))
+BDO DO GND V=V(VDD,GND)*if(V(NCNT) < 5.5, 0, if(V(NCNT) < 11.5, 1, if(V(NCNT) < 359.5, V(BIT), 1)))
+RDO DO DOUT 100
+.ends ADS1252
+
+* ---------------------------------------------------------------------
+* XIAO ESP32-S3 - modelo de comportamiento del modulo + firmware
+* Pines (numeracion del modulo Seeed):
+*  1 D0/A0  2 D1/A1  3 D2/A2  4 D3/A3  5 D4/SDA  6 D5/SCL  7 D6/TX
+*  8 D7/RX  9 D8/SCK 10 D9/MISO 11 D10/MOSI 12 3V3 13 GND 14 5V
+* 15 BAT+  16 BAT-
+* 17 RMED, 18 CODIGO: salidas VIRTUALES de monitoreo (no existen en el
+*    modulo real): resistencia calculada (1 V = 1 ohm) y codigo recibido
+* Firmware modelado:
+*  - 3V3: regulador LDO interno alimentado desde BAT+ (caida 0.15 V)
+*  - D1 = CLK del ADS1252 (PWM LEDC de frecuencia FCLK, 50 %)
+*  - Espera el pulso DRDY (flanco de bajada en D2, ignorando D2 mientras
+*    lee un dato), espera 14 ciclos de
+*    CLK y genera 24 pulsos de SCLK en D3 (frecuencia FSCLK)
+*  - Lee D2 en cada flanco de SUBIDA de SCLK (24 bits, MSB primero)
+*  - Reconstruye el codigo y calcula la resistencia (nodos internos):
+*      V(CODIGO) = codigo recibido (decimal, con signo)
+*      V(RMED)   = resistencia medida en ohm (1 V = 1 ohm)
+*    Rmed = codigo/2^23 * KOHM   (KOHM = ohm a escala completa)
+*  - D0 = LED de actividad: en ALTO mientras dura la lectura de un dato
+* ---------------------------------------------------------------------
+.subckt XIAO_ESP32S3 D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 D10 V3V3 GND V5 BATP BATN RMED CODIGO
++ params: FCLK=1Meg FSCLK=200k KOHM=3.1172 TG={372/FCLK}
+* pines no usados (alta impedancia)
+RU4 D4 GND 10Meg
+RU5 D5 GND 10Meg
+RU6 D6 GND 10Meg
+RU7 D7 GND 10Meg
+RU8 D8 GND 10Meg
+RU9 D9 GND 10Meg
+RU10 D10 GND 10Meg
+RU14 V5 GND 10Meg
+RBN BATN GND 0.01
+* regulador 3.3 V (LDO) desde la bateria y consumo del ESP32-S3
+B3V L3 GND V=min(3.3, max(V(BATP,GND)-0.15, 0))
+R3V L3 V3V3 0.05
+IESP BATP GND 40m
+* CLK del ADS1252 por D1
+VCK CKI GND PULSE(0 3.3 0 5n 5n {0.5/FCLK-5n} {1/FCLK})
+RCK CKI D1 50
+* deteccion del pulso DRDY (flanco de bajada en D2) y hora del evento
+* (el firmware conoce el periodo de conversion 384/FCLK: ignora D2 durante
+*  TG = 372/FCLK despues de cada DRDY; asi los bits en 0 no se confunden con DRDY)
+BDR DRN GND V=if(V(D2,GND) < 1.65 & V(TNOW)-V(T0D) > TG, 1, 0)
+VTM TNOW GND PWL(0 0 100 100)
+ATD TNOW GND DRN 0 0 0 T0 GND SAMPLEHOLD
+RTD T0 T0D 1k
+CTD T0D GND 10p
+* rafaga de 24 pulsos de SCLK
+BTA TAU GND V=V(TNOW)-V(T0)-14/FCLK
+BSK SKI GND V=if(abs(V(T0)-V(T0D)) < 1n & V(TAU) > 0 & V(TAU) < 24/FSCLK & (V(TAU)*FSCLK - floor(V(TAU)*FSCLK)) < 0.5, 3.3, 0)
+RSK SKI D3 50
+* lectura de los 24 bits en los flancos de subida de SCLK
+BK0 K0 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-0) < 0.5, 1, 0)
+BK1 K1 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-1) < 0.5, 1, 0)
+BK2 K2 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-2) < 0.5, 1, 0)
+BK3 K3 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-3) < 0.5, 1, 0)
+BK4 K4 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-4) < 0.5, 1, 0)
+BK5 K5 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-5) < 0.5, 1, 0)
+BK6 K6 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-6) < 0.5, 1, 0)
+BK7 K7 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-7) < 0.5, 1, 0)
+BK8 K8 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-8) < 0.5, 1, 0)
+BK9 K9 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-9) < 0.5, 1, 0)
+BK10 K10 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-10) < 0.5, 1, 0)
+BK11 K11 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-11) < 0.5, 1, 0)
+BK12 K12 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-12) < 0.5, 1, 0)
+BK13 K13 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-13) < 0.5, 1, 0)
+BK14 K14 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-14) < 0.5, 1, 0)
+BK15 K15 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-15) < 0.5, 1, 0)
+BK16 K16 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-16) < 0.5, 1, 0)
+BK17 K17 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-17) < 0.5, 1, 0)
+BK18 K18 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-18) < 0.5, 1, 0)
+BK19 K19 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-19) < 0.5, 1, 0)
+BK20 K20 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-20) < 0.5, 1, 0)
+BK21 K21 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-21) < 0.5, 1, 0)
+BK22 K22 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-22) < 0.5, 1, 0)
+BK23 K23 GND V=if(V(SKI) > 1.65 & abs(floor(V(TAU)*FSCLK+1e-6)-23) < 0.5, 1, 0)
+BDB DBIT GND V=if(V(D2,GND) > 1.65, 1, 0)
+AL0 DBIT GND K0 0 0 0 L0 GND SAMPLEHOLD
+AL1 DBIT GND K1 0 0 0 L1 GND SAMPLEHOLD
+AL2 DBIT GND K2 0 0 0 L2 GND SAMPLEHOLD
+AL3 DBIT GND K3 0 0 0 L3B GND SAMPLEHOLD
+AL4 DBIT GND K4 0 0 0 L4 GND SAMPLEHOLD
+AL5 DBIT GND K5 0 0 0 L5 GND SAMPLEHOLD
+AL6 DBIT GND K6 0 0 0 L6 GND SAMPLEHOLD
+AL7 DBIT GND K7 0 0 0 L7 GND SAMPLEHOLD
+AL8 DBIT GND K8 0 0 0 L8 GND SAMPLEHOLD
+AL9 DBIT GND K9 0 0 0 L9 GND SAMPLEHOLD
+AL10 DBIT GND K10 0 0 0 L10 GND SAMPLEHOLD
+AL11 DBIT GND K11 0 0 0 L11 GND SAMPLEHOLD
+AL12 DBIT GND K12 0 0 0 L12 GND SAMPLEHOLD
+AL13 DBIT GND K13 0 0 0 L13 GND SAMPLEHOLD
+AL14 DBIT GND K14 0 0 0 L14 GND SAMPLEHOLD
+AL15 DBIT GND K15 0 0 0 L15 GND SAMPLEHOLD
+AL16 DBIT GND K16 0 0 0 L16 GND SAMPLEHOLD
+AL17 DBIT GND K17 0 0 0 L17 GND SAMPLEHOLD
+AL18 DBIT GND K18 0 0 0 L18 GND SAMPLEHOLD
+AL19 DBIT GND K19 0 0 0 L19 GND SAMPLEHOLD
+AL20 DBIT GND K20 0 0 0 L20 GND SAMPLEHOLD
+AL21 DBIT GND K21 0 0 0 L21 GND SAMPLEHOLD
+AL22 DBIT GND K22 0 0 0 L22 GND SAMPLEHOLD
+AL23 DBIT GND K23 0 0 0 L23 GND SAMPLEHOLD
+BUR URX GND V=round(V(L0))*8388608+round(V(L1))*4194304+round(V(L2))*2097152+round(V(L3B))*1048576
++ +round(V(L4))*524288+round(V(L5))*262144+round(V(L6))*131072+round(V(L7))*65536
++ +round(V(L8))*32768+round(V(L9))*16384+round(V(L10))*8192+round(V(L11))*4096
++ +round(V(L12))*2048+round(V(L13))*1024+round(V(L14))*512+round(V(L15))*256
++ +round(V(L16))*128+round(V(L17))*64+round(V(L18))*32+round(V(L19))*16
++ +round(V(L20))*8+round(V(L21))*4+round(V(L22))*2+round(V(L23))
+* fin de la lectura -> se actualiza el valor mostrado
+BFN FIN GND V=if(V(TAU) > 24.5/FSCLK, 1, 0)
+BUF UFR GND V=V(URX)/16777216
+AFN UFR GND FIN 0 0 0 UHOLD GND SAMPLEHOLD
+BCO CODIGO GND V=if(V(UHOLD) > 0.5, round(V(UHOLD)*16777216)-16777216, round(V(UHOLD)*16777216))
+BRM RMED GND V=V(CODIGO)/8388608*KOHM
+* LED de actividad en D0 (alto durante la lectura)
+BLD LDI GND V=if(abs(V(T0)-V(T0D)) < 1n & V(TAU) > 0 & V(TAU) < 24.5/FSCLK, 3.3, 0)
+RLD LDI D0 25
+.ends XIAO_ESP32S3

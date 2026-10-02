@@ -1,0 +1,41 @@
+Version 4
+SymbolType BLOCK
+RECTANGLE Normal -96 -80 96 80
+TEXT 0 -72 Center 1 ADS1252
+WINDOW 0 -96 -96 Left 2
+WINDOW 3 96 96 Right 2
+SYMATTR Value ADS1252
+SYMATTR Prefix X
+SYMATTR Description ADS1252 ADC delta-sigma 24 bits (modelo de comportamiento, modelos_miliohmimetro.lib)
+LINE Normal -128 -48 -96 -48
+LINE Normal -128 -16 -96 -16
+LINE Normal -128 16 -96 16
+LINE Normal -128 48 -96 48
+LINE Normal 96 -48 128 -48
+LINE Normal 96 -16 128 -16
+LINE Normal 96 16 128 16
+LINE Normal 96 48 128 48
+PIN 128 -48 RIGHT 8
+PINATTR PinName VIN+
+PINATTR SpiceOrder 1
+PIN 128 -16 RIGHT 8
+PINATTR PinName VIN-
+PINATTR SpiceOrder 2
+PIN -128 48 LEFT 8
+PINATTR PinName +VDD
+PINATTR SpiceOrder 3
+PIN -128 16 LEFT 8
+PINATTR PinName CLK
+PINATTR SpiceOrder 4
+PIN -128 -16 LEFT 8
+PINATTR PinName DOUT/DRDY
+PINATTR SpiceOrder 5
+PIN -128 -48 LEFT 8
+PINATTR PinName SCLK
+PINATTR SpiceOrder 6
+PIN 128 48 RIGHT 8
+PINATTR PinName GND
+PINATTR SpiceOrder 7
+PIN 128 16 RIGHT 8
+PINATTR PinName VREF
+PINATTR SpiceOrder 8
