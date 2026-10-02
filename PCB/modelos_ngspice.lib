@@ -1,0 +1,71 @@
+* =====================================================================
+* modelos_ngspice.lib - modelos para el simulador de KiCad (ngspice)
+* Miliohmimetro IoT - Diseno de Sistemas Electronicos 2026-II (UIS)
+* Mismos modelos de comportamiento que la carpeta Simulaciones_LTspice,
+* escritos con funciones compatibles con ngspice.
+* =====================================================================
+
+* TL431 - referencia shunt (Vref = 2.495 V). Puertos: K A REF
+.subckt TL431 K A REF
+Rin REF A 100Meg
+B1 K A I=10*uramp(V(REF,A)-2.495)
+D1 A K DTL
+Cq K A 1n
+.model DTL D(Is=1e-14)
+.ends TL431
+
+* LM358 doble (encapsulado de 8 pines). Salida 0 ... V+ - 1.5 V, GBW 1 MHz
+.subckt LM358_DUAL OUTA INAN INAP VEE INBP INBN OUTB VCC
+XA INAP INAN VCC VEE OUTA LM358_1
+XB INBP INBN VCC VEE OUTB LM358_1
+Iq VCC VEE 0.7m
+.ends LM358_DUAL
+.subckt LM358_1 INP INN VCC VEE OUT
+Rin INP INN 10Meg
+G1 VEE N1 INP INN 1m
+R1 N1 VEE 100Meg
+C1 N1 VEE 159p
+D3 N1 VCC DCL
+D4 VEE N1 DCL
+Bo O1 VEE V=min(max(V(N1,VEE), 0.01), V(VCC,VEE)-1.5)
+Ro O1 OUT 30
+.model DCL D(Is=1e-14)
+.ends LM358_1
+
+* INA333 (3 op-amps, resistencias internas 50k, G = 1 + 100k/RG)
+* Puertos en orden de pines: 1 RG 2 VIN- 3 VIN+ 4 V- 5 REF 6 VOUT 7 V+ 8 RG
+.subckt INA333 RG1 VINN VINP VNEG REF VOUT VPOS RG8
+G1 VNEG N1 VINN RG1 1m
+R1 N1 VNEG 1G
+C1 N1 VNEG 455p
+DA1 N1 VPOS DCL
+DB1 VNEG N1 DCL
+B1 O1 VNEG V=min(max(V(N1,VNEG), 0.02), V(VPOS,VNEG)-0.02)
+RF1 O1 RG1 50k
+G2 VNEG N2 VINP RG8 1m
+R2 N2 VNEG 1G
+C2 N2 VNEG 455p
+DA2 N2 VPOS DCL
+DB2 VNEG N2 DCL
+B2 O2 VNEG V=min(max(V(N2,VNEG), 0.02), V(VPOS,VNEG)-0.02)
+RF2 O2 RG8 50k
+R3 O1 N3M 50k
+R4 N3M VOUT 50k
+R5 O2 N3P 50k
+R6 N3P REF 50k
+G3 VNEG N3 N3P N3M 1m
+R7 N3 VNEG 1G
+C3 N3 VNEG 455p
+DA3 N3 VPOS DCL
+DB3 VNEG N3 DCL
+B3 O3 VNEG V=min(max(V(N3,VNEG), 0.02), V(VPOS,VNEG)-0.02)
+RO O3 VOUT 10
+Iq VPOS VNEG 50u
+.model DCL D(Is=1e-14)
+.ends INA333
+
+* 2N2222A / MMBT2222A
+.model 2N2222A NPN(IS=1E-14 VAF=100 BF=200 IKF=0.3 XTB=1.5 BR=3 CJC=8E-12 CJE=25E-12 TR=100E-9 TF=400E-12 ITF=1 VTF=2 XTF=3 RB=10 RC=.3 RE=.2)
+
+* 1N4148WS
+.model 1N4148 D(Is=2.52n Rs=.568 N=1.752 Cjo=4p M=.4 tt=20n)

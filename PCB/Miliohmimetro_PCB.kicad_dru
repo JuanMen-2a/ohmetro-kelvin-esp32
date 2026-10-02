@@ -1,0 +1,4 @@
+(version 1)
+# Pads THT de GND rodeados de pistas: basta 1 radio termico conectado
+(rule "radios_termicos"
+	(constraint min_resolved_spokes 1))
